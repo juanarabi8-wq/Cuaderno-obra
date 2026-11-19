@@ -6,4 +6,4 @@ App para el móvil: carpetas con fotos y su descripción, calendario semanal con
 - Funciona **sin cobertura** una vez abierta la primera vez.
 - Botón de **copia de seguridad** (icono de arriba a la derecha) para guardar todo en un archivo y restaurarlo en otro móvil.
 
-Ábrela en: https://juanarabi8-wq.github.io/cuaderno-obra/
+Ábrela en: https://juanarabi8-wq.github.io/Cuaderno-obra/
