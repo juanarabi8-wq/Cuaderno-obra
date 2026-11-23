@@ -88,14 +88,14 @@ nav.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;
 
 /* carpetas */
 .folders{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-.folder{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;text-align:left;padding:0;display:flex;flex-direction:column}
+.folder{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;text-align:left;padding:14px 12px 12px 20px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-height:104px;position:relative;min-width:0}
 .folder .cover{aspect-ratio:4/3;max-width:100%;background:var(--sunk);position:relative;display:grid;place-items:center;color:var(--muted)}
 .folder .cover img{width:100%;height:100%;object-fit:cover;display:block}
 .folder .tab{position:absolute;left:0;top:0;bottom:0;width:6px}
 .folder .meta{padding:10px 12px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
-.folder .name{font:700 19px/1.15 var(--display);letter-spacing:.01em;overflow-wrap:anywhere}
+.folder .name{font:700 23px/1.1 var(--display);letter-spacing:.01em;overflow-wrap:anywhere}
 .folder .count{font:500 12px var(--mono);color:var(--muted)}
-.folder.add{border-style:dashed;align-items:center;justify-content:center;min-height:150px;color:var(--muted);font-weight:600;gap:6px}
+.folder.add{border-style:dashed;align-items:center;justify-content:center;min-height:104px;padding:12px;color:var(--muted);font-weight:600;gap:6px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font-weight:600;font-size:14px}
 .chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
@@ -112,6 +112,24 @@ nav.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;
 .entry{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .entry .ph{display:block;width:100%;padding:0;border:0;background:var(--sunk);aspect-ratio:4/3;max-width:100%}
 .entry .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--sunk)}
+.pgrid button{padding:0;border:0;aspect-ratio:1;max-width:100%;position:relative;background:var(--sunk)}
+.pgrid button img{width:100%;height:100%;object-fit:cover;display:block}
+.pgrid .one{grid-column:span 2;aspect-ratio:4/3}
+.pgrid .wide{grid-column:span 2;aspect-ratio:2/1}
+.pgrid .more{position:absolute;inset:0;background:rgba(0,0,0,.55);color:#fff;font:700 30px var(--display);display:grid;place-items:center}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.th{position:relative;aspect-ratio:1;max-width:100%;border-radius:10px;overflow:hidden;background:var(--sunk)}
+.th img{width:100%;height:100%;object-fit:cover;display:block}
+.th .rm{position:absolute;top:4px;right:4px;width:30px;height:30px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;display:grid;place-items:center}
+.th .rm svg{width:16px;height:16px}
+.th.addt{border:1.5px dashed var(--line);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:13px;font-weight:600;color:var(--muted);padding:0}
+.th.addt svg{width:26px;height:26px}
+.viewer .nav{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:64px;border:0;background:rgba(0,0,0,.45);color:#fff;display:grid;place-items:center}
+.viewer .nav svg{width:26px;height:26px}
+.viewer .nav.p{left:env(safe-area-inset-left,0px);border-radius:0 10px 10px 0}
+.viewer .nav.n{right:env(safe-area-inset-right,0px);border-radius:10px 0 0 10px}
+.viewer .vc{position:absolute;top:calc(20px + env(safe-area-inset-top,0px));left:calc(16px + env(safe-area-inset-left,0px));color:#fff;font:500 14px var(--mono);background:rgba(0,0,0,.5);padding:4px 10px;border-radius:8px}
 .entry .body{padding:12px 14px 12px;display:flex;flex-direction:column;gap:8px}
 .entry .ref{display:flex;justify-content:space-between;gap:8px;font:500 12px var(--mono);color:var(--muted)}
 .entry .desc{white-space:pre-wrap;overflow-wrap:anywhere;min-width:0}
@@ -324,11 +342,11 @@ function sheet(html, onMount){
   closeSheet();
   const s = document.createElement("div"); s.className="scrim"; s.id="scrim";
   s.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">${html}</div>`;
-  s.addEventListener("click", e => { if (e.target === s) closeSheet(); });
+  s.addEventListener("click", e => { if (e.target === s && !s.dataset.lock) closeSheet(); });
   document.body.appendChild(s);
   onMount && onMount(s.firstElementChild);
 }
-function closeSheet(){ const s=$("#scrim"); if(s){ stopDictation(); s.remove(); render(); } }
+function closeSheet(){ const s=$("#scrim"); if(s){ stopDictation(); s.remove(); if(ui.draft){ ui.draft.items.forEach(it=>URL.revokeObjectURL(it.url)); ui.draft=null; } render(); } }
 function confirmSheet(text, okLabel, fn){
   sheet(`<h3>¿Seguro?</h3><p>${esc(text)}</p><div class="bar"><button class="btn" data-x>Cancelar</button><button class="btn pri" data-ok style="background:var(--danger);color:#fff">${esc(okLabel)}</button></div>`, el=>{
     $("[data-x]",el).onclick = closeSheet;
@@ -355,81 +373,158 @@ function wireMic(el, ta){
 }
 
 /* ---------- fotos ---------- */
-async function shrink(file){
+async function shrink(file, stamp){
   const url = URL.createObjectURL(file);
   try{
     const img = await new Promise((ok,ko)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=ko; i.src=url; });
     const max = 1600, k = Math.min(1, max/Math.max(img.naturalWidth,img.naturalHeight));
     const c = document.createElement("canvas"); c.width=Math.round(img.naturalWidth*k); c.height=Math.round(img.naturalHeight*k);
-    c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    const ctx = c.getContext("2d"); ctx.drawImage(img,0,0,c.width,c.height);
+    if(stamp && stamp.length) drawStamp(ctx, c.width, c.height, stamp);
     return await new Promise(ok=>c.toBlob(b=>ok(b||file),"image/jpeg",0.82));
   } catch { return file; } finally { URL.revokeObjectURL(url); }
 }
-const imgSrc = p => (p.assetId && BLOBURL[p.assetId]) || "";
-
-function openCapture(files){
-  const folder = S.folders.find(f=>f.id===ui.folderId); if(!folder || !files.length) return;
-  const queue = [...files];
-  const next = () => {
-    const file = queue.shift(); if(!file){ closeSheet(); return; }
-    const prev = URL.createObjectURL(file);
-    const more = queue.length;
-    sheet(`<h3>Nueva foto · ${esc(folder.name)}</h3>
-      <img class="preview" src="${prev}" alt="Foto recién hecha">
-      <div class="field"><label for="phDesc">Descripción</label>
-        <div class="mic"><textarea id="phDesc" placeholder="Ej.: Cuadro general planta 1, falta etiquetar circuitos 4 y 5"></textarea>${micHtml()}</div></div>
-      <p class="note" id="phNote">${more?`Quedan ${more} fotos más después de esta.`:"Se guarda con la fecha y hora de ahora."}</p>
-      <div class="bar">
-        <button class="btn" data-save>Guardar</button>
-        <button class="btn pri" data-again>${more?"Guardar y siguiente":"Guardar y otra foto"}</button>
-      </div>`, el => {
-      const ta = $("#phDesc",el); setTimeout(()=>ta.focus(),60); wireMic(el, ta);
-      const save = async (again) => {
-        el.querySelectorAll("button").forEach(b=>b.disabled=true);
-        $("#phNote",el).className="note"; $("#phNote",el).textContent="Subiendo foto…";
-        stopDictation();
-        try{
-          const blob = await shrink(file);
-          const up = await assets.upload(blob, {type:"image/jpeg"});
-          await db.collection("photos").add({ folderId: folder.id, assetId: up.id, url: up.url, text: ta.value.trim(), createdAt: Date.now() });
-          URL.revokeObjectURL(prev);
-          toast("Foto guardada");
-          if (queue.length) next();
-          else if (again) { closeSheet(); $("#camIn").click(); }
-          else closeSheet();
-        } catch(e){
-          el.querySelectorAll("button").forEach(b=>b.disabled=false);
-          $("#phNote",el).className="note err";
-          $("#phNote",el).textContent = e && e.code==="too_large" ? "La foto es demasiado grande." :
-            e && e.code==="quota_or_state" ? "No queda espacio para más fotos en este cuaderno." :
-            "No se ha guardado (¿sin cobertura?). Tu texto sigue aquí: vuelve a pulsar Guardar.";
-        }
-      };
-      $("[data-save]",el).onclick = ()=>save(false);
-      $("[data-again]",el).onclick = ()=>save(true);
-    });
-  };
-  next();
+/* sello de fecha y coordenadas en la esquina inferior derecha */
+function drawStamp(ctx, w, h, lines){
+  const fs = Math.max(14, Math.round(Math.min(w,h)*0.034));
+  ctx.save();
+  ctx.font = `500 ${fs}px Arial, Helvetica, sans-serif`;
+  ctx.textAlign = "right"; ctx.textBaseline = "alphabetic";
+  ctx.lineJoin = "round"; ctx.lineWidth = Math.max(2, fs*0.14); ctx.strokeStyle = "rgba(0,0,0,.6)";
+  ctx.shadowColor = "rgba(0,0,0,.7)"; ctx.shadowBlur = fs*0.25;
+  const x = w - fs*0.7; let y = h - fs*0.8;
+  for(let i=lines.length-1;i>=0;i--){ ctx.strokeText(lines[i], x, y); ctx.fillStyle="#fff"; ctx.fillText(lines[i], x, y); y -= fs*1.3; }
+  ctx.restore();
 }
-$("#camIn").onchange = e => { const f=[...e.target.files]; e.target.value=""; openCapture(f); };
-$("#galIn").onchange = e => { const f=[...e.target.files]; e.target.value=""; openCapture(f); };
+function dms(v){
+  const sg = v<0 ? "-" : ""; v = Math.abs(v);
+  let d = Math.floor(v), m = Math.floor((v-d)*60), sec = Math.round(((v-d)*60-m)*60);
+  if(sec===60){ sec=0; m++; } if(m===60){ m=0; d++; }
+  return `${sg}${d}°${pad(m)}'${pad(sec)}"`;
+}
+function stampLines(when, geo){
+  const d = new Date(when), out = [];
+  if(geo){
+    let l = `${dms(geo.lat)}, ${dms(geo.lon)}`;
+    if(geo.alt!=null && isFinite(geo.alt)) l += `, ${geo.alt.toFixed(1).replace(".",",")}m`;
+    if(geo.head!=null && isFinite(geo.head)) l += `, ${Math.round(geo.head)}°`;
+    out.push(l);
+  }
+  out.push(`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`);
+  return out;
+}
+/* ubicación: se pide al entrar en una carpeta y al hacer foto; si no hay, solo fecha */
+function warmGeo(){
+  if(!navigator.geolocation) return;
+  try{ navigator.geolocation.getCurrentPosition(p=>{ const c=p.coords;
+    ui.pos = { lat:c.latitude, lon:c.longitude, alt:c.altitude, head:(c.heading!=null && !isNaN(c.heading))?c.heading:null, t:Date.now() }; },
+    ()=>{}, { enableHighAccuracy:true, maximumAge:60000, timeout:20000 }); }catch{}
+}
+const freshGeo = () => (ui.pos && Date.now()-ui.pos.t < 5*60000) ? ui.pos : null;
 
-function editPhoto(p){
-  sheet(`<h3>Editar descripción</h3><img class="preview" src="${esc(imgSrc(p))}" alt="">
-    <div class="field"><label for="edDesc">Descripción</label><div class="mic"><textarea id="edDesc">${esc(p.text)}</textarea>${micHtml()}</div></div>
-    <div class="field"><label for="edFolder">Carpeta</label><select id="edFolder">${S.folders.map(f=>`<option value="${f.id}" ${f.id===p.folderId?"selected":""}>${esc(f.name)}</option>`).join("")}</select></div>
-    <div class="bar"><button class="btn danger" data-del>Borrar foto</button><button class="btn pri" data-ok>Guardar</button></div>`, el=>{
-    wireMic(el, $("#edDesc",el));
-    $("[data-ok]",el).onclick = async()=>{ try{ await db.doc("photos/"+p.id).update({ text: $("#edDesc",el).value.trim(), folderId: $("#edFolder",el).value }); closeSheet(); toast("Guardado"); }catch{ toast("No se ha guardado. Revisa la conexión."); } };
-    $("[data-del]",el).onclick = ()=> confirmSheet("Se borrará la foto y su descripción para siempre.","Borrar foto", async()=>{
-      await db.doc("photos/"+p.id).delete(); if(p.assetId) assets.delete(p.assetId).catch(()=>{}); toast("Foto borrada");
-    });
+const entryAssets = p => (p.assetIds && p.assetIds.length) ? p.assetIds : (p.assetId ? [p.assetId] : []);
+const imgSrc = p => { const id = entryAssets(p)[0]; return (id && BLOBURL[id]) || ""; };
+const blobSrc = id => BLOBURL[id] || "";
+
+/* ---------- entrada: varias fotos con una descripción ---------- */
+function addFiles(files, fromCamera){
+  const d = ui.draft; if(!d) return;
+  const now = Date.now();
+  for(const file of files){
+    const when = fromCamera ? ((file.lastModified && Math.abs(now-file.lastModified)<10*60000) ? file.lastModified : now) : (file.lastModified || now);
+    d.items.push({ file, url: URL.createObjectURL(file), stamp: stampLines(when, fromCamera ? freshGeo() : null) });
+  }
+  drawStrip();
+}
+function drawStrip(){
+  const d = ui.draft, el = $("#scrim .sheet"); if(!d || !el) return;
+  const total = d.keep.length + d.items.length;
+  $("#strip",el).innerHTML =
+    d.keep.map((id,i)=>`<div class="th"><img src="${esc(blobSrc(id))}" alt=""><button class="rm" data-rk="${i}" aria-label="Quitar foto">${I.x}</button></div>`).join("") +
+    d.items.map((it,i)=>`<div class="th"><img src="${it.url}" alt=""><button class="rm" data-ri="${i}" aria-label="Quitar foto">${I.x}</button></div>`).join("") +
+    `<button class="th addt" data-addcam>${I.cam}Otra foto</button><button class="th addt" data-addgal>${I.gal}Galería</button>`;
+  $("#phCount",el).textContent = total ? `${total} foto${total===1?"":"s"} con esta descripción` : "Añade al menos una foto";
+  el.querySelectorAll("[data-rk]").forEach(b=>b.onclick=()=>{ d.removed.push(d.keep.splice(Number(b.dataset.rk),1)[0]); drawStrip(); });
+  el.querySelectorAll("[data-ri]").forEach(b=>b.onclick=()=>{ const it=d.items.splice(Number(b.dataset.ri),1)[0]; URL.revokeObjectURL(it.url); drawStrip(); });
+  $("[data-addcam]",el).onclick = ()=>{ warmGeo(); $("#camIn").click(); };
+  $("[data-addgal]",el).onclick = ()=>$("#galIn").click();
+}
+function entrySheet(p){
+  const folder = S.folders.find(f=>f.id===(p ? p.folderId : ui.folderId)); if(!folder) return;
+  ui.draft = { entry:p||null, keep: p ? entryAssets(p).slice() : [], removed:[], items:[] };
+  sheet(`<h3>${p?"Editar entrada":"Nueva entrada"} · ${esc(folder.name)}</h3>
+    <div class="strip" id="strip"></div>
+    <p class="note" id="phCount" style="margin:-4px 0 0"></p>
+    <div class="field"><label for="phDesc">Descripción</label>
+      <div class="mic"><textarea id="phDesc" placeholder="Ej.: Cuadro general planta 1, falta etiquetar circuitos 4 y 5">${esc(p?p.text:"")}</textarea>${micHtml()}</div></div>
+    ${p?`<div class="field"><label for="edFolder">Carpeta</label><select id="edFolder">${S.folders.map(f=>`<option value="${f.id}" ${f.id===p.folderId?"selected":""}>${esc(f.name)}</option>`).join("")}</select></div>`:""}
+    <p class="note" id="phNote">Cada foto nueva lleva grabada la fecha y hora${navigator.geolocation?" y, si el móvil lo permite, las coordenadas":""}.</p>
+    <div class="bar">
+      ${p?`<button class="btn danger" data-del>Borrar entrada</button>`:`<button class="btn" data-x>Cancelar</button>`}
+      <button class="btn pri" data-save>Guardar</button>
+    </div>`, el => {
+    $("#scrim").dataset.lock = "1";
+    const ta = $("#phDesc",el); wireMic(el, ta);
+    drawStrip();
+    $("[data-x]",el)?.addEventListener("click", closeSheet);
+    $("[data-del]",el)?.addEventListener("click", ()=>{ const n=entryAssets(p).length;
+      confirmSheet(`Se borrará esta entrada con ${n} foto${n===1?"":"s"} y su descripción para siempre.`,"Borrar entrada", async()=>{
+        await db.doc("photos/"+p.id).delete(); for(const id of entryAssets(p)) assets.delete(id).catch(()=>{}); toast("Entrada borrada"); }); });
+    $("[data-save]",el).onclick = async () => {
+      const d = ui.draft; if(!d) return;
+      if(!d.keep.length && !d.items.length){ $("#phNote",el).className="note err"; $("#phNote",el).textContent = p ? "No quedan fotos. Si quieres quitarla entera, pulsa “Borrar entrada”." : "Añade al menos una foto."; return; }
+      el.querySelectorAll("button").forEach(b=>b.disabled=true);
+      const note=$("#phNote",el); note.className="note"; stopDictation();
+      try{
+        const ids = [];
+        for(let i=0;i<d.items.length;i++){
+          note.textContent = `Guardando foto ${i+1} de ${d.items.length}…`;
+          const blob = await shrink(d.items[i].file, d.items[i].stamp);
+          ids.push((await assets.upload(blob, {type:"image/jpeg"})).id);
+        }
+        const all = [...d.keep, ...ids];
+        if(p){
+          await db.doc("photos/"+p.id).update({ text: ta.value.trim(), folderId: $("#edFolder",el).value, assetIds: all, assetId: all[0] });
+          for(const id of d.removed) assets.delete(id).catch(()=>{});
+        } else {
+          const g = freshGeo();
+          await db.collection("photos").add({ folderId: folder.id, assetIds: all, assetId: all[0], text: ta.value.trim(), createdAt: Date.now(), ...(g?{geo:{lat:g.lat,lon:g.lon}}:{}) });
+        }
+        closeSheet(); toast(p ? "Guardado" : (all.length>1 ? `${all.length} fotos guardadas` : "Foto guardada"));
+      } catch(e){
+        el.querySelectorAll("button").forEach(b=>b.disabled=false);
+        note.className="note err"; note.textContent="No se ha podido guardar. Puede que no quede espacio en el móvil. Tu texto sigue aquí.";
+      }
+    };
   });
 }
-function viewPhoto(p){
+function onPicked(files, fromCamera){
+  if(!files.length) return;
+  if(!(ui.draft && $("#scrim"))) entrySheet(null);
+  addFiles(files, fromCamera);
+}
+$("#camIn").onchange = e => { const f=[...e.target.files]; e.target.value=""; onPicked(f, true); };
+$("#galIn").onchange = e => { const f=[...e.target.files]; e.target.value=""; onPicked(f, false); };
+
+function viewPhoto(p, start=0){
+  const ids = entryAssets(p); let i = Math.min(start, ids.length-1);
   const v = document.createElement("div"); v.className="viewer";
-  v.innerHTML = `<button class="x" aria-label="Cerrar">${I.x}</button><img src="${esc(imgSrc(p))}" alt=""><div class="cap"><span class="stamp">${fmtStamp(p.createdAt)}</span>\n${esc(p.text||"")}</div>`;
-  v.onclick = ()=>v.remove(); document.body.appendChild(v);
+  const draw = () => {
+    v.innerHTML = `<img src="${esc(blobSrc(ids[i]))}" alt="">
+      ${ids.length>1?`<span class="vc">${i+1} / ${ids.length}</span>`:""}
+      ${ids.length>1&&i>0?`<button class="nav p" data-p aria-label="Foto anterior">${I.l}</button>`:""}
+      ${ids.length>1&&i<ids.length-1?`<button class="nav n" data-n aria-label="Foto siguiente">${I.r}</button>`:""}
+      <button class="x" aria-label="Cerrar">${I.x}</button>
+      <div class="cap"><span class="stamp">${fmtStamp(p.createdAt)}</span>\n${esc(p.text||"")}</div>`;
+    $(".x",v).onclick = () => v.remove();
+    $("[data-p]",v)?.addEventListener("click", e=>{ e.stopPropagation(); i--; draw(); });
+    $("[data-n]",v)?.addEventListener("click", e=>{ e.stopPropagation(); i++; draw(); });
+  };
+  let sx=null;
+  v.addEventListener("touchstart", e=>{ sx=e.touches[0].clientX; }, {passive:true});
+  v.addEventListener("touchend", e=>{ if(sx==null) return; const dx=e.changedTouches[0].clientX-sx; sx=null;
+    if(Math.abs(dx)>60){ if(dx<0 && i<ids.length-1){ i++; draw(); } else if(dx>0 && i>0){ i--; draw(); } } }, {passive:true});
+  draw(); document.body.appendChild(v);
 }
 
 /* ---------- carpetas ---------- */
@@ -449,9 +544,9 @@ function folderSheet(f){
       catch{ toast("No se ha guardado. Revisa la conexión."); } };
     $("[data-ok]",el).onclick = ok; inp.onkeydown = e=>{ if(e.key==="Enter") ok(); };
     $("[data-del]",el)?.addEventListener("click", ()=>{
-      const ph = S.photos.filter(p=>p.folderId===f.id);
-      confirmSheet(ph.length?`Se borrará “${f.name}” y sus ${ph.length} fotos con sus descripciones.`:`Se borrará la carpeta “${f.name}”.`, "Borrar carpeta", async()=>{
-        for(const p of ph){ await db.doc("photos/"+p.id).delete(); if(p.assetId) assets.delete(p.assetId).catch(()=>{}); }
+      const ph = S.photos.filter(p=>p.folderId===f.id); const nph = ph.reduce((n,p)=>n+entryAssets(p).length,0);
+      confirmSheet(ph.length?`Se borrará “${f.name}” y sus ${nph} fotos con sus descripciones.`:`Se borrará la carpeta “${f.name}”.`, "Borrar carpeta", async()=>{
+        for(const p of ph){ await db.doc("photos/"+p.id).delete(); for(const id of entryAssets(p)) assets.delete(id).catch(()=>{}); }
         await db.doc("folders/"+f.id).delete(); ui.folderId=null; render(); toast("Carpeta borrada");
       });
     });
@@ -560,8 +655,8 @@ function renderHome(){
   const today = ymd(new Date());
   const evs = S.events.filter(e=>e.date===today).sort((a,b)=>(a.time||"").localeCompare(b.time||""));
   const urg = S.todos.filter(t=>!t.done && (t.urgent || (t.due && t.due<=today)));
-  const counts = {}; const covers = {};
-  for(const p of S.photos){ counts[p.folderId]=(counts[p.folderId]||0)+1; if(!covers[p.folderId]) covers[p.folderId]=p; }
+  const counts = {};
+  for(const p of S.photos){ counts[p.folderId]=(counts[p.folderId]||0)+entryAssets(p).length; }
   app.innerHTML = `
     ${backupNag()}<section class="today" aria-label="Hoy">
       <div class="secrow"><h2 class="sec">Hoy · ${esc(fmtDate(today))}</h2></div>
@@ -569,9 +664,9 @@ function renderHome(){
       ${urg.length ? `<button class="linkish" data-go="pendientes">${urg.length} pendiente${urg.length>1?"s":""} urgente${urg.length>1?"s":""} o para hoy →</button>`:""}
     </section>
     <div class="secrow"><h2 class="sec">Carpetas</h2>${S.folders.length?`<button class="btn sm" data-newf>${I.plus}Nueva</button>`:""}</div>
-    ${S.folders.length ? `<div class="folders">${S.folders.map(f=>{ const c=covers[f.id]; return `
-      <button class="folder" data-f="${f.id}"><div class="cover">${c?`<img src="${esc(imgSrc(c))}" alt="" loading="lazy">`:I.cam.replace("<svg",'<svg width="34" height="34"')}<span class="tab" style="background:var(${f.color||"--f1"})"></span></div>
-      <div class="meta"><span class="name">${esc(f.name)}</span><span class="count">${counts[f.id]||0} FOTOS</span></div></button>`; }).join("")}
+    ${S.folders.length ? `<div class="folders">${S.folders.map(f=>`
+      <button class="folder" data-f="${f.id}"><span class="tab" style="background:var(${f.color||"--f1"})"></span>
+      <span class="name">${esc(f.name)}</span><span class="count">${counts[f.id]||0} FOTOS</span></button>`).join("")}
       <button class="folder add" data-newf>${I.plus.replace("<svg",'<svg width="28" height="28"')}Nueva carpeta</button></div>`
     : `<div class="emptybox"><strong>Crea tu primera carpeta</strong><span>Cada carpeta es un cuaderno de fotos con su descripción. Toca una para empezar:</span>
        <div class="chips">${SUGERIDAS.map(n=>`<button class="chip" data-quick="${esc(n)}">${esc(n)}</button>`).join("")}<button class="chip" data-newf>Otra…</button></div></div>`}
@@ -590,30 +685,36 @@ function renderFolder(){
   const q = ui.q.toLowerCase();
   const list = q ? all.filter(p=>(p.text||"").toLowerCase().includes(q)) : all;
   const prevSearch = document.activeElement && document.activeElement.id==="q";
+  const nPh = all.reduce((n,p)=>n+entryAssets(p).length,0);
+  if(ui.geoFor!==f.id){ ui.geoFor=f.id; warmGeo(); }
+  const grid = p => { const ids=entryAssets(p), n=ids.length, alt=esc((p.text||"Foto").slice(0,80));
+    if(n<=1) return `<div class="pgrid"><button class="one" data-view="${p.id}" data-i="0" aria-label="Ver foto en grande"><img src="${esc(blobSrc(ids[0]))}" alt="${alt}" loading="lazy"></button></div>`;
+    const show = ids.slice(0, 4);
+    return `<div class="pgrid">${show.map((id,i)=>`<button class="${n===3&&i===2?"wide":""}" data-view="${p.id}" data-i="${i}" aria-label="Ver foto ${i+1} de ${n}"><img src="${esc(blobSrc(id))}" alt="${alt}" loading="lazy">${i===3&&n>4?`<span class="more">+${n-4}</span>`:""}</button>`).join("")}</div>`; };
   app.innerHTML = `
     <div class="capture">
       <button class="btn pri" data-cam>${I.cam}Hacer foto</button>
       <button class="btn" data-gal aria-label="Elegir de la galería">${I.gal}Galería</button>
     </div>
     ${all.length>3?`<input class="search" id="q" type="search" placeholder="Buscar en las descripciones" value="${esc(ui.q)}">`:""}
-    <div class="secrow"><h2 class="sec">${all.length} foto${all.length===1?"":"s"}${q?` · ${list.length} encontradas`:""}</h2><button class="btn sm ghost" data-editf>Editar carpeta</button></div>
+    <div class="secrow"><h2 class="sec">${all.length} entrada${all.length===1?"":"s"} · ${nPh} foto${nPh===1?"":"s"}${q?` · ${list.length} encontradas`:""}</h2><button class="btn sm ghost" data-editf>Editar carpeta</button></div>
     ${list.length ? `<div class="entries">${list.map((p,i)=>`
       <article class="entry">
-        <button class="ph" data-view="${p.id}" aria-label="Ver foto en grande"><img src="${esc(imgSrc(p))}" alt="${esc((p.text||"Foto").slice(0,80))}" loading="lazy"></button>
+        ${grid(p)}
         <div class="body">
           <div class="ref"><span>Nº ${String(all.length - all.indexOf(p)).padStart(3,"0")}</span><span>${fmtStamp(p.createdAt)}</span></div>
           <div class="desc ${p.text?"":"none"}">${p.text?esc(p.text):"Sin descripción"}</div>
           <div class="acts"><button class="btn sm" data-edit="${p.id}">Editar</button></div>
         </div>
       </article>`).join("")}</div>`
-    : `<div class="emptybox"><strong>${q?"Nada coincide":"Cuaderno vacío"}</strong><span>${q?"Prueba con otra palabra.":"Pulsa “Hacer foto”: se abre la cámara y justo después escribes qué es. Queda guardado con fecha y hora."}</span></div>`}
+    : `<div class="emptybox"><strong>${q?"Nada coincide":"Cuaderno vacío"}</strong><span>${q?"Prueba con otra palabra.":"Pulsa “Hacer foto”: se abre la cámara y justo después escribes qué es. Puedes añadir varias fotos a la misma descripción."}</span></div>`}
   `;
-  $("[data-cam]",app).onclick = ()=>$("#camIn").click();
+  $("[data-cam]",app).onclick = ()=>{ warmGeo(); $("#camIn").click(); };
   $("[data-gal]",app).onclick = ()=>$("#galIn").click();
   $("[data-editf]",app).onclick = ()=>folderSheet(f);
   const qi = $("#q",app); if(qi){ qi.oninput = ()=>{ ui.q=qi.value; render(); }; if(prevSearch){ qi.focus(); qi.setSelectionRange(qi.value.length,qi.value.length); } }
-  app.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>viewPhoto(S.photos.find(p=>p.id===b.dataset.view)));
-  app.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editPhoto(S.photos.find(p=>p.id===b.dataset.edit)));
+  app.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>viewPhoto(S.photos.find(p=>p.id===b.dataset.view), Number(b.dataset.i)||0));
+  app.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>entrySheet(S.photos.find(p=>p.id===b.dataset.edit)));
 }
 
 const toMin = t => { const [h,m]=t.split(":").map(Number); return h*60+m; };
