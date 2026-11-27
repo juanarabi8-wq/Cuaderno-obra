@@ -1,5 +1,5 @@
 // Guarda la app en el móvil para que abra sin cobertura.
-const VERSION = "obra-v2";
+const VERSION = "obra-v3";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

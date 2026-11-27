@@ -257,6 +257,8 @@ nav.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;
 .viewer{position:fixed;inset:0;background:#000;z-index:50;display:flex;flex-direction:column}
 .viewer img{flex:1;min-height:0;width:100%;object-fit:contain}
 .viewer .cap{color:#eee;padding:12px max(16px,env(safe-area-inset-left,0px)) calc(14px + env(safe-area-inset-bottom,0px));white-space:pre-wrap;max-height:30%;overflow:auto}
+.viewer .vbar{display:flex;gap:8px;margin-bottom:10px;white-space:normal}
+.viewer .vbar .btn{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.3)}
 .viewer .x{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));background:rgba(0,0,0,.6);color:#fff;border:0;width:46px;height:46px;border-radius:50%;display:grid;place-items:center}
 
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 14px + env(safe-area-inset-bottom,0px));z-index:60;
@@ -317,6 +319,8 @@ const I = {
   flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M5 21V4h11l-2 4 2 4H5"/></svg>',
   check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>',
   mic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>',
+  share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
   x:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
 };
 
@@ -425,6 +429,35 @@ const freshGeo = () => (ui.pos && Date.now()-ui.pos.t < 5*60000) ? ui.pos : null
 const entryAssets = p => (p.assetIds && p.assetIds.length) ? p.assetIds : (p.assetId ? [p.assetId] : []);
 const imgSrc = p => { const id = entryAssets(p)[0]; return (id && BLOBURL[id]) || ""; };
 const blobSrc = id => BLOBURL[id] || "";
+const BLOB = {};
+
+/* ---------- compartir (WhatsApp, correo…) ---------- */
+const slug = t => (t||"obra").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\w]+/g,"-").replace(/^-|-$/g,"").slice(0,30) || "obra";
+function entryFiles(p, only){
+  const folder = S.folders.find(f=>f.id===p.folderId);
+  const base = `${slug(folder&&folder.name)}_${ymd(new Date(p.createdAt))}`;
+  const ids = entryAssets(p);
+  const pick = only==null ? ids.map((id,i)=>[id,i]) : [[ids[only],only]];
+  return pick.filter(([id])=>BLOB[id]).map(([id,i])=>new File([BLOB[id]], `${base}_${i+1}.jpg`, {type:"image/jpeg"}));
+}
+async function shareEntry(p, only){
+  if(!p) return;
+  const folder = S.folders.find(f=>f.id===p.folderId);
+  const files = entryFiles(p, only);
+  if(!files.length){ toast("No encuentro la foto en este móvil."); return; }
+  const text = [p.text, `${folder?folder.name+" · ":""}${fmtStamp(p.createdAt)}`].filter(Boolean).join("\n");
+  let copied = false;
+  try{ navigator.clipboard && navigator.clipboard.writeText(text).then(()=>{ copied=true; }).catch(()=>{}); }catch{}
+  if(navigator.canShare && navigator.canShare({files})){
+    try{
+      await navigator.share({ files, text });
+      if(/iPhone|iPad|iPod/.test(navigator.userAgent) && copied) toast("Si el texto no aparece en WhatsApp, mantén pulsado y elige Pegar");
+    }catch(e){ if(e && e.name!=="AbortError") toast("No se ha podido compartir."); }
+    return;
+  }
+  files.forEach((f,k)=>setTimeout(()=>saveFile(f.name,f), k*400));
+  toast(`${files.length===1?"Foto descargada":files.length+" fotos descargadas"}${copied?" y texto copiado":""}`);
+}
 
 /* ---------- entrada: varias fotos con una descripción ---------- */
 function addFiles(files, fromCamera){
@@ -515,8 +548,10 @@ function viewPhoto(p, start=0){
       ${ids.length>1&&i>0?`<button class="nav p" data-p aria-label="Foto anterior">${I.l}</button>`:""}
       ${ids.length>1&&i<ids.length-1?`<button class="nav n" data-n aria-label="Foto siguiente">${I.r}</button>`:""}
       <button class="x" aria-label="Cerrar">${I.x}</button>
-      <div class="cap"><span class="stamp">${fmtStamp(p.createdAt)}</span>\n${esc(p.text||"")}</div>`;
+      <div class="cap"><div class="vbar"><button class="btn sm" data-vsh>${I.share}Compartir</button><button class="btn sm" data-vdl>${I.down}Descargar</button></div><span class="stamp">${fmtStamp(p.createdAt)}</span>\n${esc(p.text||"")}</div>`;
     $(".x",v).onclick = () => v.remove();
+    $("[data-vsh]",v).onclick = () => shareEntry(p, i);
+    $("[data-vdl]",v).onclick = () => { const f=entryFiles(p,i)[0]; if(f){ saveFile(f.name,f); toast("Foto descargada: está en Descargas / Archivos"); } };
     $("[data-p]",v)?.addEventListener("click", e=>{ e.stopPropagation(); i--; draw(); });
     $("[data-n]",v)?.addEventListener("click", e=>{ e.stopPropagation(); i++; draw(); });
   };
@@ -704,7 +739,7 @@ function renderFolder(){
         <div class="body">
           <div class="ref"><span>Nº ${String(all.length - all.indexOf(p)).padStart(3,"0")}</span><span>${fmtStamp(p.createdAt)}</span></div>
           <div class="desc ${p.text?"":"none"}">${p.text?esc(p.text):"Sin descripción"}</div>
-          <div class="acts"><button class="btn sm" data-edit="${p.id}">Editar</button></div>
+          <div class="acts"><button class="btn sm" data-share="${p.id}">${I.share}Compartir</button><button class="btn sm" data-edit="${p.id}">Editar</button></div>
         </div>
       </article>`).join("")}</div>`
     : `<div class="emptybox"><strong>${q?"Nada coincide":"Cuaderno vacío"}</strong><span>${q?"Prueba con otra palabra.":"Pulsa “Hacer foto”: se abre la cámara y justo después escribes qué es. Puedes añadir varias fotos a la misma descripción."}</span></div>`}
@@ -714,6 +749,7 @@ function renderFolder(){
   $("[data-editf]",app).onclick = ()=>folderSheet(f);
   const qi = $("#q",app); if(qi){ qi.oninput = ()=>{ ui.q=qi.value; render(); }; if(prevSearch){ qi.focus(); qi.setSelectionRange(qi.value.length,qi.value.length); } }
   app.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>viewPhoto(S.photos.find(p=>p.id===b.dataset.view), Number(b.dataset.i)||0));
+  app.querySelectorAll("[data-share]").forEach(b=>b.onclick=()=>shareEntry(S.photos.find(p=>p.id===b.dataset.share)));
   app.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>entrySheet(S.photos.find(p=>p.id===b.dataset.edit)));
 }
 
@@ -885,8 +921,8 @@ db = {
   }; },
 };
 assets = {
-  async upload(blob){ const id=uid(); await putOne("blobs",{id,blob,type:blob.type||"image/jpeg"}); BLOBURL[id]=URL.createObjectURL(blob); return {id,url:BLOBURL[id]}; },
-  async delete(id){ await delOne("blobs",id); if(BLOBURL[id]){ URL.revokeObjectURL(BLOBURL[id]); delete BLOBURL[id]; } return {deleted:true}; },
+  async upload(blob){ const id=uid(); await putOne("blobs",{id,blob,type:blob.type||"image/jpeg"}); BLOBURL[id]=URL.createObjectURL(blob); BLOB[id]=blob; return {id,url:BLOBURL[id]}; },
+  async delete(id){ await delOne("blobs",id); if(BLOBURL[id]){ URL.revokeObjectURL(BLOBURL[id]); delete BLOBURL[id]; } delete BLOB[id]; return {deleted:true}; },
 };
 function saveFile(filename, blob){
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=filename;
@@ -933,8 +969,8 @@ async function restoreBackup(file, note){
   confirmSheet(`Se sustituirá todo lo que hay ahora en este móvil por la copia del ${new Date(data.exportedAt).toLocaleDateString("es-ES")} (${n} fotos).`, "Restaurar copia", async()=>{
     toast("Restaurando…");
     for(const st of STORES) await rq((await store(st,"readwrite")).clear());
-    for(const k in BLOBURL){ URL.revokeObjectURL(BLOBURL[k]); delete BLOBURL[k]; }
-    for(const b of data.blobs||[]){ const blob=b64ToBlob(b.b64,b.type||"image/jpeg"); await putOne("blobs",{id:b.id,blob,type:b.type}); BLOBURL[b.id]=URL.createObjectURL(blob); }
+    for(const k in BLOBURL){ URL.revokeObjectURL(BLOBURL[k]); delete BLOBURL[k]; delete BLOB[k]; }
+    for(const b of data.blobs||[]){ const blob=b64ToBlob(b.b64,b.type||"image/jpeg"); await putOne("blobs",{id:b.id,blob,type:b.type}); BLOBURL[b.id]=URL.createObjectURL(blob); BLOB[b.id]=blob; }
     for(const n of ["folders","photos","events","todos"]) for(const o of data[n]||[]) await putOne(n,o);
     for(const n of ["folders","photos","events","todos"]) await emit(n);
     toast("Copia restaurada");
@@ -970,7 +1006,7 @@ $("#menuBtn").onclick = backupSheet;
 async function start(){
   try{
     await idb();
-    for(const b of await getAll("blobs")) BLOBURL[b.id]=URL.createObjectURL(b.blob);
+    for(const b of await getAll("blobs")){ BLOBURL[b.id]=URL.createObjectURL(b.blob); BLOB[b.id]=b.blob; }
   }catch(e){ S.err="Este navegador no deja guardar datos (¿modo incógnito?). Ábrela en una ventana normal."; return render(); }
   try{ navigator.storage?.persist?.(); }catch{}
   const sub = (name, q) => q.onSnapshot(snap=>{
